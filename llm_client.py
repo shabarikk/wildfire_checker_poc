@@ -11,20 +11,12 @@ import ssl
 import urllib.error
 import urllib.request
 
-ENT_TOOLS_URL = os.environ["ENT_TOOLS_URL"]
-ENT_TOOLS_API_KEY = os.environ["ENT_TOOLS_API_KEY"]
+ENT_TOOLS_URL = os.environ.get("ENT_TOOLS_URL")
+ENT_TOOLS_API_KEY = os.environ.get("ENT_TOOLS_API_KEY")
 ANTHROPIC_MODEL = "claude-sonnet-5"
 ANTHROPIC_VERSION = "2023-06-01"
 
-# Ent Tools' cert chains up to the GOA CA. The Dockerfile installs it into
-# the container's system trust store for the deployed app, but that's a
-# no-op outside the container (e.g. running this file directly in the
-# sandbox shell) -- so load it explicitly here too, on top of the normal
-# system defaults, rather than depending on where this happens to run.
-_GOA_CA_PATH = os.path.join(os.path.dirname(__file__), "goa-ca-chain.pem")
 _SSL_CONTEXT = ssl.create_default_context()
-if os.path.exists(_GOA_CA_PATH):
-    _SSL_CONTEXT.load_verify_locations(cafile=_GOA_CA_PATH)
 
 ADVISORY_SYSTEM_PROMPT = """\
 You are a wildfire-conditions advisory writer for the BC Wildfire Predictor tool.
@@ -100,6 +92,9 @@ def call_llm(system_prompt, user_payload, max_tokens=1000, timeout=30):
     Returns the model's plain-text reply. Raises LLMError on any failure --
     callers must not fall back to inventing an answer of their own.
     """
+    if not ENT_TOOLS_URL or not ENT_TOOLS_API_KEY:
+        raise LLMError("LLM advisory is disabled; optional Ent Tools credentials are not configured.")
+
     body = {
         "model": ANTHROPIC_MODEL,
         "max_tokens": max_tokens,

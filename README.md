@@ -114,7 +114,7 @@ flowchart TD
 cd wildfire-poc
 python3 build_report.py "Kelowna" --radius-km 50
 
-# Run the web app locally (needs ENT_TOOLS_URL / ENT_TOOLS_API_KEY in env)
+# Run the web app locally (the LLM headline is omitted unless optional Ent Tools credentials are configured)
 python3 app.py
 
 # Test the container before deploying -- this is step 3 above, and it matters:
@@ -122,7 +122,6 @@ python3 app.py
 docker build -t wildfire-poc-local .
 docker network create --opt com.docker.network.driver.mtu=1460 test-mtu-net
 docker run -d --network test-mtu-net -p 8080:8080 \
-  -e ENT_TOOLS_URL="$ENT_TOOLS_URL" -e ENT_TOOLS_API_KEY="$ENT_TOOLS_API_KEY" \
   wildfire-poc-local
 
 # Run the ground-truth eval's self-tests (no network needed)
